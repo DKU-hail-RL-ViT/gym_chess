@@ -1,8 +1,8 @@
 # 이 버전은 playout에서 env.reset을 매번 해줘야해서 함수를 하나로 만들어버리기로 함. 그 직전의 버전
-
 import numpy as np
 import copy
 
+from pettingzoo.classic import chess_v6
 import chess
 import gymnasium
 import numpy as np
@@ -147,7 +147,7 @@ class MCTS(object):
         the leaf and propagating it back through its parents.
         State is modified in-place, so a copy must be provided.
         """
-        env.reset()  # TODO 여기에서 env.reset을 하면 문제가 생길 가능성이 매우 높음. 근데 일단 해봄.
+        # env.reset()
         if not move_list is None:
             for i in range(len(move_list)):  # move_list의 길이만큼 반복해서
                 move = move_list[i]
@@ -181,15 +181,19 @@ class MCTS(object):
         # Update value and visit count of nodes in this traversal.
         node.update_recursive(-leaf_value)
 
-    def get_move_probs(self, env, move_list=None, temp=1e-3):
+    def get_move_probs(self, env, move_list=None, temp=1e-3, to_restore= [] ):
         """Run all playouts sequentially and return the available actions and
         their corresponding probabilities.
         state: the current game state
         temp: temperature parameter in (0, 1] controls the level of exploration
         """
         for n in range(self._n_playout):
-            env_copy = copy.deepcopy(env)
-            self._playout(env_copy, move_list)
+            env_new = chess_v6.env()
+            env_new.reset()
+            for move in move_list:
+                env_new.step(move)
+            # env_copy.agent_selection = env.agent_selection
+            self._playout(env_new, move_list)
 
         # calc the move probabilities based on visit counts at the root node
         act_visits = [(act, node._n_visits)
@@ -242,7 +246,7 @@ class MCTSPlayer(object):
         move_probs = np.zeros(obs.shape[0] * obs.shape[1] * obs.shape[2])
         print(legal_moves)
         if len(legal_moves) > 0: # TODO 조건 이 이거 하나만 아니라 아니라 더 추가 되어야할 수도 있음 체스라서
-            acts, probs = self.mcts.get_move_probs(env, move_list, temp)
+            acts, probs = self.mcts.get_move_probs(env, move_list, temp, to_restore=[])
             move_probs[list(acts)] = probs
             if self._is_selfplay:
                 # add Dirichlet Noise for exploration (needed for self-play training)

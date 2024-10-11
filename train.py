@@ -105,7 +105,7 @@ def self_play(env, mcts_player, temp):
         current_state = torch.tensor(observation['observation'].copy(), dtype=torch.float32)
         move, move_probs = mcts_player.get_action(env, current_state, move_list, temp, return_prob=1)
 
-        env.reset()
+        # env.reset()
 
         move_list.append(move)
         observation_ = torch.permute(current_state, (2, 0, 1))  # (8, 8, 111) -> (111, 8, 8)
@@ -113,9 +113,9 @@ def self_play(env, mcts_player, temp):
         mcts_probs.append(move_probs)
         current_player.append(player_0)
 
-        for i in range(len(move_list)):  # move_list의 길이만큼 반복
-            move = move_list[i]  # 인덱스를 사용하여 move_list에서 move를 가져옴
-            env.step(move)
+        # for i in range(len(move_list)):  # move_list의 길이만큼 반복
+            # move = move_list[i]  # 인덱스를 사용하여 move_list에서 move를 가져옴
+            # env.step(move)
 
         player_0 = 1 - player_0
         player_1 = 1 - player_0
@@ -213,7 +213,7 @@ def policy_evaluate(env, current_mcts_player, old_mcts_player, n_games=30):  # t
 
 
 if __name__ == '__main__':
-    env = chess_v6.env(render_mode="human")
+    env = chess_v6.env()
     env.reset(seed=42)
 
     if torch.cuda.is_available():  # Windows
