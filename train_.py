@@ -21,15 +21,15 @@ parser.add_argument("--buffer_size", type=int, default=10000)
 parser.add_argument("--c_puct", type=int, default=5)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--lr_multiplier", type=float, default=1.0)
-parser.add_argument("--n_playout", type=int, default=50)
+parser.add_argument("--n_playout", type=int, default=3)
 parser.add_argument("--self_play_sizes", type=int, default=100)
-parser.add_argument("--training_iterations", type=int, default=100) # fiar에서는 100번했음
+parser.add_argument("--training_iterations", type=int, default=1500) # fiar에서는 100번했음
 parser.add_argument("--temp", type=float, default=1.0)
 
 """ Policy update parameter """
 parser.add_argument("--batch_size", type=int, default=256)   # fiar에서는 64번했음
 parser.add_argument("--data_buffers", type=int, default=deque(maxlen=10000))
-parser.add_argument("--learn_rate", type=float, default=1e-3)
+parser.add_argument("--learn_rate", type=float, default=2e-3)
 parser.add_argument("--lr_mul", type=float, default=1.0)
 parser.add_argument("--kl_targ", type=float, default=0.02)  # 이게 train network에서 self.goal = 0.02이랑 같은거 인지 봐야할듯
 
@@ -120,19 +120,19 @@ def self_play(env, mcts_player, temp):
         observation, reward, termination, truncation, info = env.last()
 
         if termination or truncation:
-            if reward == 0:
+            if env.rewards == 0:
                 print('self_play_draw')
             mcts_player.reset_player()  # reset MCTS root node
             winners_z = np.zeros(len(current_player))
 
             if env.rewards != 0:  # non draw
-                if reward == -1:
-                    reward = 0
+                if env.rewards == -1:
+                    env.rewards = 0
                 # if winner is current player, winner_z = 1
-                winners_z[np.array(current_player) == 1 - reward] = 1.0
-                winners_z[np.array(current_player) != 1 - reward] = -1.0
+                winners_z[np.array(current_player) == 1 - env.rewards] = 1.0
+                winners_z[np.array(current_player) != 1 - env.rewards] = -1.0
 
-            return reward, zip(states, mcts_probs, winners_z)
+            return env.rewards, zip(states, mcts_probs, winners_z)
 
 
 def policy_update(lr_mul, policy_value_net, data_buffer):
@@ -216,6 +216,7 @@ if __name__ == '__main__':
     else:  # CPU
         device = torch.device("cpu")
 
+    # TODO 만약에 dataset을 써야한다면 바로 밑의  model_file=init_model 대신에 human data 파일 경로를 넣어주면 될 것
     if init_model:
         policy_value_net = PolicyValueNet(env.observe('player_0')['observation'].shape[0],
                                           env.observe('player_0')['observation'].shape[1],
@@ -226,7 +227,6 @@ if __name__ == '__main__':
 
     curr_mcts_player = MCTSPlayer(policy_value_net.policy_value_fn, c_puct, n_playout, is_selfplay=1)
     data_buffers = deque(maxlen=10000)
-
     try:
         for i in range(training_iterations):
 
@@ -240,6 +240,11 @@ if __name__ == '__main__':
                                                                            data_buffers=data_buffer)
 
             policy_evaluate(env, curr_mcts_player, curr_mcts_player)
+
+
+
+
+
 
 
 

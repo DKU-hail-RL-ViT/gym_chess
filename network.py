@@ -130,8 +130,13 @@ class PolicyValueNet():
         available = []
         uci_moves = list(env.env.env.env.board.legal_moves)
         uci_moves = [move.uci() for move in uci_moves]
-        for uci_move in uci_moves:
-            available.append(move_map_white(uci_move))
+        if env.env.env.env.board.turn == True:
+            for uci_move in uci_moves:
+                available.append(move_map_white(uci_move))
+        else:
+            for uci_move in uci_moves:
+                move = black_move(uci_move)
+                available.append(move_map_black(move))
 
         current_state = torch.tensor(state.copy(), dtype=torch.float32)
         current_state = current_state.permute(2, 0, 1).unsqueeze(0).to(self.device)  # (8, 8, 111) -> (1, 111, 8, 8)
