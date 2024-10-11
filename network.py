@@ -1,17 +1,52 @@
+# 이 버전은 playout에서 env.reset을 매번 해줘야해서 함수를 하나로 만들어버리기로 함. 그 직전의 버전
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from torch.autograd import Variable
 import numpy as np
+from torch.autograd import Variable
 
-from pettingzoo.classic.chess import chess_utils
+import pickle
+import chess
+
+from pettingzoo.classic.chess import chess_utils as ut
 
 
 def set_learning_rate(optimizer, lr):
     """Sets the learning rate to the given value"""
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
+
+
+def label_moves(df):
+    df['player'] = [(8 if i % 2 == 0 else 9) for i in range(len(df))]
+    return df
+
+
+def move_map_black(move):
+    TOTAL = 73
+    source = move.from_square
+    coord = ut.square_to_coord(source)
+    panel = ut.get_move_plane(move)
+    cur_action = (coord[0] * 8 + coord[1]) * TOTAL + panel
+    return cur_action
+
+
+def move_map_white(uci_move):
+    TOTAL = 73
+    move = chess.Move.from_uci(uci_move)
+    source = move.from_square
+    coord = ut.square_to_coord(source)
+    panel = ut.get_move_plane(move)
+    cur_action = (coord[0] * 8 + coord[1]) * TOTAL + panel
+    return cur_action
+
+
+def black_move(uci_move):
+    move = chess.Move.from_uci(uci_move)
+    mir = ut.mirror_move(move)
+    return mir
 
 
 class Net(nn.Module):
@@ -86,31 +121,32 @@ class PolicyValueNet():
         # value = value.cpu().numpy()
         return act_probs, value
 
-    def policy_value_fn(self, env, agent):
+    def policy_value_fn(self, env, state):
         """
         input: board
         output: a list of (action, probability) tuples for each available
         action and the score of the board state
         """
+        available = []
         uci_moves = list(env.env.env.env.board.legal_moves)
         uci_moves = [move.uci() for move in uci_moves]
         for uci_move in uci_moves:
-            legal_positions = chess_utils.make_move_mapping(uci_move)
+            available.append(move_map_white(uci_move))
 
-        legal_positions = list(legal_positions.values())
-        current_state = env.observe(agent)['observation']
-        current_state = torch.tensor(current_state, dtype=torch.float32)
-        current_state = current_state.permute(2, 0, 1).unsqueeze(0).to(self.device)
+        current_state = torch.tensor(state.copy(), dtype=torch.float32)
+        current_state = current_state.permute(2, 0, 1).unsqueeze(0).to(self.device)  # (8, 8, 111) -> (1, 111, 8, 8)
 
         with torch.no_grad():
             log_act_probs, value = self.policy_value_net(current_state)
             act_probs = torch.exp(log_act_probs).cpu().numpy().flatten()
+            masked_act_probs = np.zeros_like(act_probs)
+            masked_act_probs[available] = act_probs[available]
+            if masked_act_probs.sum() > 0:  # if have not available action
+                masked_act_probs /= masked_act_probs.sum()
+            else:
+                masked_act_probs /= (masked_act_probs.sum()+1)
 
-        # TODO legal_position 에 있는 정보들을 숫자로 바꿔서 거기에 맞는 act_probs랑 맞춰줘야하나?
-        print(legal_positions)
-        act_probs = zip(legal_positions, act_probs[legal_positions]) # TODO 오목에서는 그냥 가능한 action에다가 확률값 붙여주긴했는데 action_mask를 붙여주면 되나? 어떻게 하지
-        return act_probs, value # TODO 여기서 또 궁금한점 지금 이대로 하면  가능한 action들이랑, 그 action 들의 확률값을 zip해서 넘겨주는데 act_probs[legal_positions] 이 확률값 다 더했을때 1이 되어야하는거 아닌가?
-
+        return available, masked_act_probs, value
 
     def train_step(self, state_batch, mcts_probs, winner_batch, lr):
         """perform a training step"""

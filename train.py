@@ -1,3 +1,5 @@
+# 이 버전은 playout에서 env.reset을 매번 해줘야해서 함수를 하나로 만들어버리기로 함. 그 직전의 버전
+
 import torch
 import argparse
 import numpy as np
@@ -19,7 +21,7 @@ parser.add_argument("--buffer_size", type=int, default=10000)
 parser.add_argument("--c_puct", type=int, default=5)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--lr_multiplier", type=float, default=1.0)
-parser.add_argument("--n_playout", type=int, default=400)
+parser.add_argument("--n_playout", type=int, default=2)
 parser.add_argument("--self_play_sizes", type=int, default=100)
 parser.add_argument("--training_iterations", type=int, default=1500) # fiar에서는 100번했음
 parser.add_argument("--temp", type=float, default=1.0)
@@ -59,6 +61,8 @@ def get_equi_data(play_data):
     play_data: [(state, mcts_prob, winner_z), ..., ...]
     """
     extend_data = []
+    board_height = 8
+    board_width = 8
     for state, mcts_prob, winner in play_data:
         for i in [1, 2, 3, 4]:
             # rotate counterclockwise
@@ -94,16 +98,24 @@ def self_play(env, mcts_player, temp):
     player_0 = 0
     player_1 = 1 - player_0
     states, mcts_probs, current_player = [], [], []
+    move_list = []
 
-    for agent in env.agent_iter():  # TODO 여기에서 for문을 하는게 아닐 수도 있음 그것도 확인해봐야함 그리고 뭐 우리 agent를 하나 써야한다고 그런거 같은데
-        observation, reward, termination, truncation, info = env.last() # TODO 이걸 굳이 해야하는지도 함 봐야할듯
-        move, move_probs = mcts_player.get_action(env, agent, temp, return_prob=1)  # TODO 수정 해야할 수도 위쪽에 그리고 여기에서는 action_mask 넣어야할 지도 봐야할듯
+    while True:
+        observation, reward, termination, truncation, info = env.last()
+        current_state = torch.tensor(observation['observation'].copy(), dtype=torch.float32)
+        move, move_probs = mcts_player.get_action(env, current_state, move_list, temp, return_prob=1)
 
-        states.append(env.observe(agent)['observation']) # TODO states.append될 때 흑백 바뀌면서 들어갈 떄 제대로 들어가는 지 확인해봐야 함.
+        env.reset()
+
+        move_list.append(move)
+        observation_ = torch.permute(current_state, (2, 0, 1))  # (8, 8, 111) -> (111, 8, 8)
+        states.append(observation_)
         mcts_probs.append(move_probs)
-        current_player.append(player_0)  # TODO currnet_player에서 일단 player_0 이 0이면 백이 이긴거고 1이면 흑이 이긴거
+        current_player.append(player_0)
 
-        observation, reward, termination, truncation, info = env.step(move)
+        for i in range(len(move_list)):  # move_list의 길이만큼 반복
+            move = move_list[i]  # 인덱스를 사용하여 move_list에서 move를 가져옴
+            env.step(move)
 
         player_0 = 1 - player_0
         player_1 = 1 - player_0

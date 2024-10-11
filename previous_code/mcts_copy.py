@@ -1,5 +1,3 @@
-# 이 버전은 playout에서 env.reset을 매번 해줘야해서 함수를 하나로 만들어버리기로 함. 그 직전의 버전
-
 import numpy as np
 import copy
 
@@ -142,29 +140,22 @@ class MCTS(object):
         self._c_puct = c_puct
         self._n_playout = n_playout
 
-    def _playout(self, env, move_list=None):
+    def _playout(self, env, agent=None, termination=False, truncation=False):
         """Run a single playout from the root to the leaf, getting a value at
         the leaf and propagating it back through its parents.
         State is modified in-place, so a copy must be provided.
         """
-        env.reset()  # TODO 여기에서 env.reset을 하면 문제가 생길 가능성이 매우 높음. 근데 일단 해봄.
-        if not move_list is None:
-            for i in range(len(move_list)):  # move_list의 길이만큼 반복해서
-                move = move_list[i]
-                env.step(move)
-
         node = self._root
-        observation, reward, termination, truncation, info = env.last()
-
-        while(1):  # 여기에서 for agent in env.agent_iter(): 해야하나
+        while(1):
             if node.is_leaf():
                 break
             # Greedily select next move.
             action, node = node.select(self._c_puct)
             print(action)
-            env.step(action)
+            # mask = observation["action_mask"]
+            observation, reward, termination, truncation, info = env.step(action)
 
-        available, action_probs, leaf_value = self._policy(env, observation['observation'])
+        available, action_probs, leaf_value = self._policy(env, agent)
         action_probs = zip(available, action_probs[available])
 
         if not termination or truncation: # TODO 여기에서 내가 그거 해야함 available에 맞게 확률값 리턴해야함
@@ -173,7 +164,7 @@ class MCTS(object):
         else:
             if env.results == 0:  # tie
                 leaf_value = 0.0
-            elif env.results == env.env.env.env.board.turn:  # TODO 이게 아닐 수도 있음 확인해봐야함.
+            elif env.results == env.env.env.env.board.turn():  # TODO 이게 아닐 수도 있음 확인해봐야함.
                 leaf_value = 1.0
             else:
                 leaf_value = -1.0
@@ -181,7 +172,7 @@ class MCTS(object):
         # Update value and visit count of nodes in this traversal.
         node.update_recursive(-leaf_value)
 
-    def get_move_probs(self, env, move_list=None, temp=1e-3):
+    def get_move_probs(self, env, agent=None, temp=1e-3):
         """Run all playouts sequentially and return the available actions and
         their corresponding probabilities.
         state: the current game state
@@ -189,7 +180,8 @@ class MCTS(object):
         """
         for n in range(self._n_playout):
             env_copy = copy.deepcopy(env)
-            self._playout(env_copy, move_list)
+            # self._playout(env_copy)
+            self._playout(env_copy, agent) # TODO 여기에서 agent를 받아오면 안될거 같은데
 
         # calc the move probabilities based on visit counts at the root node
         act_visits = [(act, node._n_visits)
@@ -227,22 +219,18 @@ class MCTSPlayer(object):
     def reset_player(self):
         self.mcts.update_with_move(-1)
 
-    def get_action(self, env, obs, move_list=None, temp=1e-3, return_prob=0):
+    def get_action(self, env, agent=None, temp=1e-3, return_prob=0):
         legal_moves = []
         uci_moves = list(env.env.env.env.board.legal_moves)
         uci_moves = [move.uci() for move in uci_moves]
-        if env.env.env.env.board.turn == True: # TODO True일때 말의 turn이 white인지 확인해봐야 함
-            for uci_move in uci_moves:
-                legal_moves.append(move_map_white(uci_move))
-        else:
-            for uci_move in uci_moves:
-                move = black_move(uci_move)
-                legal_moves.append(move_map_black(move))
+        for uci_move in uci_moves:
+            legal_moves.append(move_map_white(uci_move)) # TODO 이게 맞음?
 
-        move_probs = np.zeros(obs.shape[0] * obs.shape[1] * obs.shape[2])
-        print(legal_moves)
+        move_probs = np.zeros(len(legal_moves))
+
         if len(legal_moves) > 0: # TODO 조건 이 이거 하나만 아니라 아니라 더 추가 되어야할 수도 있음 체스라서
-            acts, probs = self.mcts.get_move_probs(env, move_list, temp)
+            acts, probs = self.mcts.get_move_probs(env, agent, temp)
+            # acts, probs = self.mcts.get_move_probs(env, temp)
             move_probs[list(acts)] = probs
             if self._is_selfplay:
                 # add Dirichlet Noise for exploration (needed for self-play training)

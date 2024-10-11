@@ -1,2 +1,8 @@
 .idea/
 __pycache__/
+previous_code/
+
+mcts_copy.py
+mcts_copy2.py
+previous_code/network_copy.py
+previous_code/train_copy.py
