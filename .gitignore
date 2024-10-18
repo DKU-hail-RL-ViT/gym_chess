@@ -1,5 +1,6 @@
 .idea/
 __pycache__/
+wandb/
 previous_code/
 
 mcts_copy.py
