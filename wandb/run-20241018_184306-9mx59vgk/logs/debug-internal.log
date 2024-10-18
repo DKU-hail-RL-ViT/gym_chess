@@ -1,0 +1,16 @@
+{"time":"2024-10-18T18:43:06.578113+09:00","level":"INFO","msg":"using version","core version":"0.18.5"}
+{"time":"2024-10-18T18:43:06.578171+09:00","level":"INFO","msg":"created symlink","path":"/Users/arachne0/PycharmProjects/gym-AlphaZero-Chess/wandb/run-20241018_184306-9mx59vgk/logs/debug-core.log"}
+{"time":"2024-10-18T18:43:06.692566+09:00","level":"INFO","msg":"created new stream","id":"9mx59vgk"}
+{"time":"2024-10-18T18:43:06.692609+09:00","level":"INFO","msg":"stream: started","id":"9mx59vgk"}
+{"time":"2024-10-18T18:43:06.692653+09:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"9mx59vgk"}}
+{"time":"2024-10-18T18:43:06.692923+09:00","level":"INFO","msg":"sender: started","stream_id":"9mx59vgk"}
+{"time":"2024-10-18T18:43:06.693085+09:00","level":"INFO","msg":"handler: started","stream_id":{"value":"9mx59vgk"}}
+{"time":"2024-10-18T18:43:07.150083+09:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-10-18T19:14:57.813992+09:00","level":"INFO","msg":"stream: closing","id":"9mx59vgk"}
+{"time":"2024-10-18T19:14:57.814203+09:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-10-18T19:14:57.814832+09:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-10-18T19:14:58.969703+09:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2024-10-18T19:14:59.244243+09:00","level":"INFO","msg":"handler: closed","stream_id":{"value":"9mx59vgk"}}
+{"time":"2024-10-18T19:14:59.244271+09:00","level":"INFO","msg":"sender: closed","stream_id":"9mx59vgk"}
+{"time":"2024-10-18T19:14:59.244263+09:00","level":"INFO","msg":"writer: Close: closed","stream_id":{"value":"9mx59vgk"}}
+{"time":"2024-10-18T19:14:59.244575+09:00","level":"INFO","msg":"stream: closed","id":"9mx59vgk"}

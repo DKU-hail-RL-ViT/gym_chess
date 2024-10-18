@@ -115,10 +115,10 @@ class PolicyValueNet():
         """
         state_batch = np.array(state_batch)
         state_batch = torch.tensor(state_batch, dtype=torch.float32, device=self.device)
-        log_act_probs, value = self.policy_value_net(state_batch)
-        act_probs = torch.exp(log_act_probs).cpu().numpy()
-        # TODO  numpy나 cpu로 바꿔서 넣어줘야할수도 있음.
-        # value = value.cpu().numpy()
+        with torch.no_grad():
+            log_act_probs, value = self.policy_value_net(state_batch)
+            act_probs = torch.exp(log_act_probs).cpu().numpy()
+
         return act_probs, value
 
     def policy_value_fn(self, env, state):
@@ -164,18 +164,16 @@ class PolicyValueNet():
         mcts_probs = torch.tensor(mcts_probs_np, dtype=torch.float32, device=self.device)
         winner_batch = torch.tensor(winner_batch_np, dtype=torch.float32, device=self.device)
 
-        # zero the parameter gradients
-        self.optimizer.zero_grad()
-        # set learning rate
-        set_learning_rate(self.optimizer, lr)
-
-        # forward
         log_act_probs, value = self.policy_value_net(state_batch)
         # define the loss = (z - v)^2 - pi^T * log(p) + c||theta||^2
         # Note: the L2 penalty is incorporated in optimizer
+
         value_loss = F.mse_loss(value.view(-1), winner_batch)
         policy_loss = -torch.mean(torch.sum(mcts_probs*log_act_probs, 1))
         loss = value_loss + policy_loss
+
+        self.optimizer.zero_grad()
+        set_learning_rate(self.optimizer, lr)
 
         # backward and optimize
         loss.backward()

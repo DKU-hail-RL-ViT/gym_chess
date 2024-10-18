@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/Users/arachne0/PycharmProjects/gym-AlphaZero-Chess/train.py", line 287, in <module>
+    data_buffer_each = collect_selfplay_data(env, curr_mcts_player)
+  File "/Users/arachne0/PycharmProjects/gym-AlphaZero-Chess/train.py", line 89, in collect_selfplay_data
+    rewards, play_data = self_play(env, mcts_player, temp)
+  File "/Users/arachne0/PycharmProjects/gym-AlphaZero-Chess/train.py", line 122, in self_play
+    move, move_probs = mcts_player.get_action(env, current_state, move_list, temp, return_prob=1)
+  File "/Users/arachne0/PycharmProjects/gym-AlphaZero-Chess/mcts_AlphaZero.py", line 245, in get_action
+    acts, probs = self.mcts.get_move_probs(move_list, temp)
+  File "/Users/arachne0/PycharmProjects/gym-AlphaZero-Chess/mcts_AlphaZero.py", line 192, in get_move_probs
+    self._playout(env_new)
+  File "/Users/arachne0/PycharmProjects/gym-AlphaZero-Chess/mcts_AlphaZero.py", line 159, in _playout
+    env.step(action)
+UnboundLocalError: local variable 'action' referenced before assignment

@@ -53,8 +53,6 @@ def black_move(uci_move):
     return mir
 
 
-
-
 class TreeNode(object):
     """A node in the MCTS tree.
 
@@ -155,9 +153,6 @@ class MCTS(object):
                 break
             # Greedily select next move.
             action, node = node.select(self._c_puct)
-            # print("in playout: ", action)
-            if action is None:
-                print(observation)
             env.step(action)
 
         available, action_probs, leaf_value = self._policy(env, observation['observation'])
@@ -178,7 +173,7 @@ class MCTS(object):
         # Update value and visit count of nodes in this traversal.
         node.update_recursive(-leaf_value)
 
-    def get_move_probs(self, env, move_list=None, temp=1e-3, to_restore= [] ):
+    def get_move_probs(self, move_list=None, temp=1e-3):
         """Run all playouts sequentially and return the available actions and
         their corresponding probabilities.
         state: the current game state
@@ -187,7 +182,6 @@ class MCTS(object):
         for n in range(self._n_playout):
             env_new = chess_v6.env()
             env_new.reset()
-            print(len(move_list))
             for move in move_list:
                 env_new.step(move)
             # env_copy.agent_selection = env.agent_selection
@@ -233,7 +227,7 @@ class MCTSPlayer(object):
         legal_moves = []
         uci_moves = list(env.env.env.env.board.legal_moves)
         uci_moves = [move.uci() for move in uci_moves]
-        if env.env.env.env.board.turn == True:  # TODO True일때 말의 turn이 white인지 확인해봐야 함
+        if env.env.env.env.board.turn == True:
             for uci_move in uci_moves:
                 legal_moves.append(move_map_white(uci_move))
         else:
@@ -241,10 +235,10 @@ class MCTSPlayer(object):
                 move = black_move(uci_move)
                 legal_moves.append(move_map_black(move))
 
-        move_probs = np.zeros(obs.shape[0] * obs.shape[1] * obs.shape[2])
+        move_probs = np.zeros(obs.shape[0] * obs.shape[1] * 73)
         # print(legal_moves)
         if len(legal_moves) > 0: # TODO 조건 이 이거 하나만 아니라 아니라 더 추가 되어야할 수도 있음 체스라서
-            acts, probs = self.mcts.get_move_probs(env, move_list, temp, to_restore=[])
+            acts, probs = self.mcts.get_move_probs(move_list, temp)
             move_probs[list(acts)] = probs
             if self._is_selfplay:
                 # add Dirichlet Noise for exploration (needed for self-play training)

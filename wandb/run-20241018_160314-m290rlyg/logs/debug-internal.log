@@ -1,0 +1,9 @@
+{"time":"2024-10-18T16:03:14.842764+09:00","level":"INFO","msg":"using version","core version":"0.18.5"}
+{"time":"2024-10-18T16:03:14.842812+09:00","level":"INFO","msg":"created symlink","path":"/Users/arachne0/PycharmProjects/gym-AlphaZero-Chess/wandb/run-20241018_160314-m290rlyg/logs/debug-core.log"}
+{"time":"2024-10-18T16:03:14.954915+09:00","level":"INFO","msg":"created new stream","id":"m290rlyg"}
+{"time":"2024-10-18T16:03:14.954955+09:00","level":"INFO","msg":"stream: started","id":"m290rlyg"}
+{"time":"2024-10-18T16:03:14.955184+09:00","level":"INFO","msg":"sender: started","stream_id":"m290rlyg"}
+{"time":"2024-10-18T16:03:14.955115+09:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"m290rlyg"}}
+{"time":"2024-10-18T16:03:14.955207+09:00","level":"INFO","msg":"handler: started","stream_id":{"value":"m290rlyg"}}
+{"time":"2024-10-18T16:03:15.338483+09:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-10-18T16:19:00.616872+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/graphql\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)"}

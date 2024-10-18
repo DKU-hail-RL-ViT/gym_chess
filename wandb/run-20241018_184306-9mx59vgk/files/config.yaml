@@ -1,0 +1,51 @@
+_wandb:
+    value:
+        cli_version: 0.18.5
+        m: []
+        python_version: 3.10.14
+        t:
+            "1":
+                - 1
+                - 55
+            "2":
+                - 1
+                - 55
+            "3":
+                - 13
+                - 16
+                - 23
+                - 55
+            "4": 3.10.14
+            "5": 0.18.5
+            "8":
+                - 5
+            "12": 0.18.5
+            "13": darwin-arm64
+batch_size:
+    value: 256
+buffer_size:
+    value: 10000
+c_puct:
+    value: 5
+epochs:
+    value: 10
+init_model:
+    value: null
+kl_targ:
+    value: 0.02
+learn_rate:
+    value: 0.001
+lr_mul:
+    value: 1
+lr_multiplier:
+    value: 1
+n_playout:
+    value: 50
+self_play_sizes:
+    value: 1
+temp:
+    value: 1
+training_iterations:
+    value: 100
+win_ratio:
+    value: 0

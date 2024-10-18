@@ -1,0 +1,8 @@
+{"time":"2024-10-18T17:31:33.25049+09:00","level":"INFO","msg":"using version","core version":"0.18.5"}
+{"time":"2024-10-18T17:31:33.250563+09:00","level":"INFO","msg":"created symlink","path":"/Users/arachne0/PycharmProjects/gym-AlphaZero-Chess/wandb/run-20241018_173133-kk9ecujy/logs/debug-core.log"}
+{"time":"2024-10-18T17:31:33.367252+09:00","level":"INFO","msg":"created new stream","id":"kk9ecujy"}
+{"time":"2024-10-18T17:31:33.367302+09:00","level":"INFO","msg":"stream: started","id":"kk9ecujy"}
+{"time":"2024-10-18T17:31:33.367329+09:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"kk9ecujy"}}
+{"time":"2024-10-18T17:31:33.36741+09:00","level":"INFO","msg":"sender: started","stream_id":"kk9ecujy"}
+{"time":"2024-10-18T17:31:33.367563+09:00","level":"INFO","msg":"handler: started","stream_id":{"value":"kk9ecujy"}}
+{"time":"2024-10-18T17:31:34.037942+09:00","level":"INFO","msg":"Starting system monitor"}

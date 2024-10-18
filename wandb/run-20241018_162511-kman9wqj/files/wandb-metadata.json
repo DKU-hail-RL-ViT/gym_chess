@@ -1,0 +1,39 @@
+{
+  "os": "macOS-15.0-arm64-arm-64bit",
+  "python": "3.10.14",
+  "startedAt": "2024-10-18T07:25:11.895983Z",
+  "program": "/Users/arachne0/PycharmProjects/gym-AlphaZero-Chess/train.py",
+  "codePath": "train.py",
+  "git": {
+    "remote": "https://github.com/DKU-hail-RL-ViT/gym_chess.git",
+    "commit": "5f5ad15547d67f66ca17b7601ae6634bea07e6d4"
+  },
+  "email": "1022lsh@naver.com",
+  "root": "/Users/arachne0/PycharmProjects/gym-AlphaZero-Chess",
+  "host": "MacBook-Pro-6.local",
+  "username": "arachne0",
+  "executable": "/Users/arachne0/anaconda3/envs/gym-AlphaZero-Chess/bin/python",
+  "codePathLocal": "train.py",
+  "cpu_count": 8,
+  "cpu_count_logical": 8,
+  "disk": {
+    "/": {
+      "total": "494384795648",
+      "used": "336729808896"
+    }
+  },
+  "memory": {
+    "total": "17179869184"
+  },
+  "cpu": {
+    "count": 8,
+    "countLogical": 8
+  },
+  "apple": {
+    "name": "Apple M1 Pro",
+    "ecpuCores": 2,
+    "pcpuCores": 6,
+    "gpuCores": 14,
+    "memoryGb": 16
+  }
+}
