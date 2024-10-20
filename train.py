@@ -89,7 +89,7 @@ def collect_selfplay_data(env, mcts_player, game_iter):
         rewards, play_data = self_play(env, mcts_player, temp, game_iter, self_play_i)
         play_data = list(play_data)[:]
         episode_len = len(play_data)
-        wandb.log({"eval/game_len": episode_len})
+        wandb.log({"selfplay/game_len": episode_len})
 
         # augment the data
         play_data = get_equi_data(play_data)
@@ -128,10 +128,12 @@ def self_play(env, mcts_player, temp, game_iter=0, self_play_i=0):
         current_player.append(player_0)
 
         env.step(move)
+        # print(reward)
 
         player_0 = 1 - player_0
         player_1 = 1 - player_0
         observation, reward, termination, truncation, info = env.last()
+        # print("last in selfplay", env.env.env.env.rewards['player_0'])
 
         # print(len(states)) # TODO selfplay에서는 gamelen 찍고 있음 (1,2,3 ....)
         if termination or truncation:
@@ -144,7 +146,7 @@ def self_play(env, mcts_player, temp, game_iter=0, self_play_i=0):
                        "selfplay/reward": reward
                        })
 
-            if reward == 0:
+            if env.env.env.env.rewards['player_0'] == 0 and env.env.env.env.rewards['player_1'] == 0:
                 print('self_play_draw')
 
             mcts_player.reset_player()  # reset MCTS root node
@@ -152,14 +154,14 @@ def self_play(env, mcts_player, temp, game_iter=0, self_play_i=0):
                 game_iter + 1, self_play_i + 1, len(current_player)))
             winners_z = np.zeros(len(current_player))
 
-            if reward != 0:  # non draw
-                if reward == -1:
+            if env.env.env.env.rewards['player_0'] != 0:  # non draw
+                if env.env.env.env.rewards['player_0'] == -1:
                     reward = 0
                 # if winner is current player, winner_z = 1
                 winners_z[np.array(current_player) == 1 - reward] = 1.0
                 winners_z[np.array(current_player) != 1 - reward] = -1.0
                 if reward == 0:
-                    reward = -1
+                    env.env.env.env.rewards['player_0'] = -1
             return reward, zip(states, mcts_probs, winners_z)
 
 
@@ -212,14 +214,12 @@ def policy_evaluate(env, current_mcts_player, old_mcts_player, n_games=30):  # t
     win_cnt = defaultdict(int)
 
     for j in range(n_games):
-        winner = start_play(env, training_mcts_player, opponent_mcts_player)
-        if winner == -1:
-            winner = 0
+        winner, move_len = start_play(env, training_mcts_player, opponent_mcts_player)
         win_cnt[winner] += 1
-        print("{} / 30 ".format(j + 1))
+        print("{} / 30 - move_len: {} ".format(j + 1, move_len))
 
     win_ratio = 1.0 * win_cnt[1] / n_games
-    print("---------- win: {}, lose: {}, tie:{} ----------".format(win_cnt[1], win_cnt[0], win_cnt[-1]))
+    print("---------- win: {}, lose: {}, tie:{} ----------".format(win_cnt[1], win_cnt[-1], win_cnt[0]))
     return win_ratio, training_mcts_player
 
 
@@ -252,10 +252,11 @@ def start_play(env, player1, player2):
             player_in_turn = players[current_player]
 
         else:
+            reward = env.env.env.env.rewards['player_0']
             wandb.log({"eval/game_len": move_lists,
                        "eval/reward": reward
                        })
-            return reward
+            return reward, len(move_lists)
 
 
 if __name__ == '__main__':
