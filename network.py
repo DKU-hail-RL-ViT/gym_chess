@@ -1,13 +1,12 @@
-# 이 버전은 playout에서 env.reset을 매번 해줘야해서 함수를 하나로 만들어버리기로 함. 그 직전의 버전
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import numpy as np
-from torch.autograd import Variable
+
 
 import pickle
+import os
 import chess
 
 from pettingzoo.classic.chess import chess_utils as ut
@@ -57,13 +56,13 @@ class Net(nn.Module):
         self.board_width = board_width
         self.board_height = board_height
         # common layers
-        self.conv1 = nn.Conv2d(111, 32, kernel_size=3, padding=1)  # TODO board.shape (8 * 8 * 111) -> (1 * 111 * 8 * 8)
+        self.conv1 = nn.Conv2d(111, 32, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
         self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
         # action policy layers
         self.act_conv1 = nn.Conv2d(128, 4, kernel_size=1)
-        self.act_fc1 = nn.Linear(4*board_width*board_height,  # TODO act_fc1이 이렇게 넣어주면 안되는거 일 수도 있음. 일단 나중에 다시
-                                 board_width*board_height*73) # TODO action space가 8 * 8 * 73이라서
+        self.act_fc1 = nn.Linear(4*board_width*board_height,
+                                 board_width*board_height*73)
         # state value layers
         self.val_conv1 = nn.Conv2d(128, 2, kernel_size=1)
         self.val_fc1 = nn.Linear(2*board_width*board_height, 64)
@@ -191,4 +190,6 @@ class PolicyValueNet():
     def save_model(self, model_file):
         """ save model params to file """
         net_params = self.get_policy_param()  # get model params
+        # Ensure that the directory exists before saving the file
+        os.makedirs(os.path.dirname(model_file), exist_ok=True)
         torch.save(net_params, model_file)

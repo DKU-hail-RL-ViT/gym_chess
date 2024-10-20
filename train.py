@@ -21,7 +21,7 @@ parser.add_argument("--c_puct", type=int, default=5)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--lr_multiplier", type=float, default=1.0)
 parser.add_argument("--n_playout", type=int, default=50)
-parser.add_argument("--self_play_sizes", type=int, default=1)  # TODO 50으로 설정할거지만 일단 뒤에까지 가는데 오래걸려서 1로 잠깐 씀
+parser.add_argument("--self_play_sizes", type=int, default=20)  # TODO 50으로 설정할거지만 일단 뒤에까지 가는데 오래걸려서 1로 잠깐 씀
 parser.add_argument("--training_iterations", type=int, default=100)  # fiar에서는 100번했음
 parser.add_argument("--temp", type=float, default=1.0)
 
@@ -89,7 +89,7 @@ def collect_selfplay_data(env, mcts_player, game_iter):
         rewards, play_data = self_play(env, mcts_player, temp, game_iter, self_play_i)
         play_data = list(play_data)[:]
         episode_len = len(play_data)
-        print("in self-play episode 길이:", episode_len)
+        wandb.log({"eval/game_len": episode_len})
 
         # augment the data
         play_data = get_equi_data(play_data)
@@ -133,14 +133,16 @@ def self_play(env, mcts_player, temp, game_iter=0, self_play_i=0):
         player_1 = 1 - player_0
         observation, reward, termination, truncation, info = env.last()
 
-        print(len(states)) # TODO 여기에서 len 찍고 있음
-
+        # print(len(states)) # TODO selfplay에서는 gamelen 찍고 있음 (1,2,3 ....)
         if termination or truncation:
             # recode time
             iteration_time = time.time() - start_time
             formatted_time = time.strftime("%H:%M:%S", time.gmtime(iteration_time))
             print(formatted_time)
-            wandb.log({"iteration_time": iteration_time})
+
+            wandb.log({"selfplay/iteration_time": float(iteration_time),
+                       "selfplay/reward": reward
+                       })
 
             if reward == 0:
                 print('self_play_draw')
@@ -240,7 +242,7 @@ def start_play(env, player1, player2):
         # synchronize the MCTS tree with the current state of the game
         move = player_in_turn.get_action(env, current_state, move_lists, temp=1e-3, return_prob=0)
         move_lists.append(move)
-        print(len(move_lists))
+        # print(len(move_lists)) # TODO eval에서 1,2,3은 여기에서 찍고 있음.
 
         env.step(move)
         observation, reward, termination, truncation, info = env.last()
@@ -250,7 +252,9 @@ def start_play(env, player1, player2):
             player_in_turn = players[current_player]
 
         else:
-            env.reset()
+            wandb.log({"eval/game_len": move_lists,
+                       "eval/reward": reward
+                       })
             return reward
 
 
