@@ -21,15 +21,15 @@ parser.add_argument("--c_puct", type=int, default=5)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--lr_multiplier", type=float, default=1.0)
 parser.add_argument("--n_playout", type=int, default=50)
-parser.add_argument("--self_play_sizes", type=int, default=20)  # TODO 50으로 설정할거지만 일단 뒤에까지 가는데 오래걸려서 1로 잠깐 씀
-parser.add_argument("--training_iterations", type=int, default=100)  # fiar에서는 100번했음
+parser.add_argument("--self_play_sizes", type=int, default=50)
+parser.add_argument("--training_iterations", type=int, default=100)
 parser.add_argument("--temp", type=float, default=1.0)
 
 """ Policy update parameter """
 parser.add_argument("--batch_size", type=int, default=256)
 parser.add_argument("--learn_rate", type=float, default=1e-3)
 parser.add_argument("--lr_mul", type=float, default=1.0)
-parser.add_argument("--kl_targ", type=float, default=0.02)  # 이게 train network에서 self.goal = 0.02이랑 같은거 인지 봐야할듯
+parser.add_argument("--kl_targ", type=float, default=0.02)
 
 """ Policy evaluate parameter """
 parser.add_argument("--win_ratio", type=float, default=0.0)
@@ -88,8 +88,6 @@ def collect_selfplay_data(env, mcts_player, game_iter):
     for self_play_i in range(self_play_sizes):
         rewards, play_data = self_play(env, mcts_player, temp, game_iter, self_play_i)
         play_data = list(play_data)[:]
-        episode_len = len(play_data)
-        wandb.log({"selfplay/game_len": episode_len})
 
         # augment the data
         play_data = get_equi_data(play_data)
@@ -98,11 +96,10 @@ def collect_selfplay_data(env, mcts_player, game_iter):
         win_cnt[rewards] += 1
 
     print("\n ---------- Self-Play win: {}, lose: {}, tie:{} ----------".format(win_cnt[1], win_cnt[-1], win_cnt[0]))
-    print(len(data_buffer))
 
     win_ratio = 1.0 * win_cnt[1] / self_play_sizes
     print("Win rate : ", round(win_ratio * 100, 3), "%")
-    wandb.log({"Win_Rate/self_play": round(win_ratio * 100, 3)})
+    wandb.log({"win_Rate/self_play": round(win_ratio * 100, 3)})
 
     return data_buffer
 
@@ -128,25 +125,24 @@ def self_play(env, mcts_player, temp, game_iter=0, self_play_i=0):
         current_player.append(player_0)
 
         env.step(move)
-        # print(reward)
 
         player_0 = 1 - player_0
         player_1 = 1 - player_0
         observation, reward, termination, truncation, info = env.last()
-        # print("last in selfplay", env.env.env.env.rewards['player_0'])
 
-        # print(len(states)) # TODO selfplay에서는 gamelen 찍고 있음 (1,2,3 ....)
         if termination or truncation:
+            reward_ = env.env.env.env.rewards['player_0']
             # recode time
             iteration_time = time.time() - start_time
             formatted_time = time.strftime("%H:%M:%S", time.gmtime(iteration_time))
             print(formatted_time)
 
             wandb.log({"selfplay/iteration_time": float(iteration_time),
-                       "selfplay/reward": reward
+                       "selfplay/reward": reward_,
+                       "selfplay/game_len": len(current_player)
                        })
 
-            if env.env.env.env.rewards['player_0'] == 0 and env.env.env.env.rewards['player_1'] == 0:
+            if reward_ == 0:
                 print('self_play_draw')
 
             mcts_player.reset_player()  # reset MCTS root node
@@ -154,22 +150,20 @@ def self_play(env, mcts_player, temp, game_iter=0, self_play_i=0):
                 game_iter + 1, self_play_i + 1, len(current_player)))
             winners_z = np.zeros(len(current_player))
 
-            if env.env.env.env.rewards['player_0'] != 0:  # non draw
-                if env.env.env.env.rewards['player_0'] == -1:
+            if reward_ != 0:  # non draw
+                if reward_ == -1:
                     reward = 0
                 # if winner is current player, winner_z = 1
                 winners_z[np.array(current_player) == 1 - reward] = 1.0
                 winners_z[np.array(current_player) != 1 - reward] = -1.0
-                if reward == 0:
-                    env.env.env.env.rewards['player_0'] = -1
-            return reward, zip(states, mcts_probs, winners_z)
+            return reward_, zip(states, mcts_probs, winners_z)
 
 
 def policy_update(lr_mul, policy_value_net, data_buffers=None):
     """update the policy-value net"""
     kl, loss, entropy = 0, 0, 0
     lr_multiplier = lr_mul
-    update_data_buffer = [data for buffer in data_buffers for data in buffer]  # queue에 2번 집어넣어서 빼야힘
+    update_data_buffer = [data for buffer in data_buffers for data in buffer]
 
     mini_batch = random.sample(update_data_buffer, batch_size)
     state_batch = [data[0] for data in mini_batch]
@@ -234,6 +228,7 @@ def start_play(env, player1, player2):
     current_player = 0
     player_in_turn = players[current_player]
     move_lists = []
+    start_time = time.time()
 
     while True:
         observation, reward, termination, truncation, info = env.last()
@@ -242,7 +237,6 @@ def start_play(env, player1, player2):
         # synchronize the MCTS tree with the current state of the game
         move = player_in_turn.get_action(env, current_state, move_lists, temp=1e-3, return_prob=0)
         move_lists.append(move)
-        # print(len(move_lists)) # TODO eval에서 1,2,3은 여기에서 찍고 있음.
 
         env.step(move)
         observation, reward, termination, truncation, info = env.last()
@@ -253,8 +247,12 @@ def start_play(env, player1, player2):
 
         else:
             reward = env.env.env.env.rewards['player_0']
-            wandb.log({"eval/game_len": move_lists,
-                       "eval/reward": reward
+            iteration_time_ = time.time() - start_time
+            formatted_time = time.strftime("%H:%M:%S", time.gmtime(iteration_time_))
+            print(formatted_time)
+            wandb.log({"eval/game_len": len(move_lists),
+                       "eval/reward": reward,
+                       "eval/iteration_time": float(iteration_time_)
                        })
             return reward, len(move_lists)
 

@@ -4,7 +4,6 @@ import torch.optim as optim
 import torch.nn.functional as F
 import numpy as np
 
-
 import pickle
 import os
 import chess
@@ -104,7 +103,7 @@ class PolicyValueNet():
         self.optimizer = optim.Adam(self.policy_value_net.parameters(),
                                     weight_decay=self.l2_const)
         if model_file:
-            net_params = torch.load(model_file)
+            net_params = torch.load(model_file, map_location=self.device, weights_only=True)
             self.policy_value_net.load_state_dict(net_params)
 
     def policy_value(self, state_batch):

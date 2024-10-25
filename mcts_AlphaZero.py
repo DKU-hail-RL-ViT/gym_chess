@@ -1,20 +1,7 @@
-# 이 버전은 playout에서 env.reset을 매번 해줘야해서 함수를 하나로 만들어버리기로 함. 그 직전의 버전
+import chess
 import numpy as np
-import copy
 
 from pettingzoo.classic import chess_v6
-import chess
-import gymnasium
-import numpy as np
-import pygame
-from gymnasium import spaces
-from gymnasium.utils import EzPickle
-
-from pettingzoo import AECEnv
-from pettingzoo.classic.chess import chess_utils
-from pettingzoo.utils import wrappers
-from pettingzoo.utils.agent_selector import agent_selector
-
 from pettingzoo.classic.chess import chess_utils as ut
 
 
@@ -163,9 +150,10 @@ class MCTS(object):
             node.expand(action_probs)
 
         else:
+            reward = env.env.env.env.rewards['player_0']
             if reward == 0:  # tie
                 leaf_value = 0.0
-            elif reward == env.env.env.env.board.turn:  # TODO turn이 True or False로 나와서 0,1로 바꿔줘야함
+            elif reward == env.env.env.env.board.turn:
                 leaf_value = 1.0
             else:
                 leaf_value = -1.0
@@ -236,8 +224,8 @@ class MCTSPlayer(object):
                 legal_moves.append(move_map_black(move))
 
         move_probs = np.zeros(obs.shape[0] * obs.shape[1] * 73)
-        # print(legal_moves)
-        if len(legal_moves) > 0: # TODO 조건 이 이거 하나만 아니라 아니라 더 추가 되어야할 수도 있음 체스라서
+
+        if len(legal_moves) > 0:
             acts, probs = self.mcts.get_move_probs(move_list, temp)
             move_probs[list(acts)] = probs
             if self._is_selfplay:
